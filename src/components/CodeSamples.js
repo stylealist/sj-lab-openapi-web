@@ -1,12 +1,17 @@
 import React, { useState } from "react";
 
 // 지금 보고 있는 주소를 그대로 붙여 넣어 쓸 수 있는 코드로 만들어 준다.
-function buildSamples(url) {
+// 키를 고른 상태면 헤더(X-API-Key)까지 넣어 준다 — 키는 주소보다 헤더로 보내는 편이 안전하다.
+function buildSamples(url, apiKey) {
+  const curlHeader = apiKey ? ' \\\n  -H "X-API-Key: ' + apiKey + '"' : "";
+  const jsHeader = apiKey ? ', {\n  headers: { "X-API-Key": "' + apiKey + '" }\n}' : "";
+  const pyHeader = apiKey ? ', headers={"X-API-Key": "' + apiKey + '"}' : "";
+
   return [
     {
       id: "curl",
       label: "curl",
-      code: 'curl "' + url + '"',
+      code: 'curl "' + url + '"' + curlHeader,
     },
     {
       id: "javascript",
@@ -14,7 +19,9 @@ function buildSamples(url) {
       code:
         'const response = await fetch("' +
         url +
-        '");\nconst data = await response.json();\nconsole.log(data);',
+        '"' +
+        jsHeader +
+        ");\nconst data = await response.json();\nconsole.log(data);",
     },
     {
       id: "python",
@@ -22,13 +29,15 @@ function buildSamples(url) {
       code:
         'import requests\n\nresponse = requests.get("' +
         url +
-        '")\nresponse.raise_for_status()\nprint(response.json())',
+        '"' +
+        pyHeader +
+        ")\nresponse.raise_for_status()\nprint(response.json())",
     },
   ];
 }
 
-function CodeSamples({ url }) {
-  const samples = buildSamples(url);
+function CodeSamples({ url, apiKey }) {
+  const samples = buildSamples(url, apiKey);
   const [activeId, setActiveId] = useState(samples[0].id);
   const [copied, setCopied] = useState(false);
 

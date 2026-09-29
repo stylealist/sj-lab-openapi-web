@@ -11,7 +11,7 @@ import {
 import CodeSamples from "./CodeSamples";
 
 /** 선택한 API 하나의 문서 + 실행해 보기 + 샘플 코드 */
-function ApiDetail({ api }) {
+function ApiDetail({ api, apiKey }) {
   const [values, setValues] = useState({});
   const [result, setResult] = useState(null);
   const [running, setRunning] = useState(false);
@@ -47,7 +47,7 @@ function ApiDetail({ api }) {
 
   const handleRun = async () => {
     setRunning(true);
-    setResult(await callApi(requestPath));
+    setResult(await callApi(requestPath, apiKey));
     setRunning(false);
   };
 
@@ -119,6 +119,7 @@ function ApiDetail({ api }) {
             {running ? "부르는 중…" : "실행해 보기"}
           </button>
           {hasEmptyPathParam && <span style={hintStyle}>경로 값을 채워야 실행할 수 있습니다.</span>}
+          {apiKey && <span style={keyNoteStyle}>내 API 키를 함께 보냅니다</span>}
         </div>
       </div>
 
@@ -143,7 +144,7 @@ function ApiDetail({ api }) {
 
       <div style={cardStyle}>
         <h2 style={sectionTitleStyle}>샘플 코드</h2>
-        <CodeSamples url={fullUrl} />
+        <CodeSamples url={fullUrl} apiKey={apiKey} />
       </div>
     </section>
   );
@@ -260,6 +261,8 @@ const runButtonStyle = {
 };
 
 const hintStyle = { fontSize: "0.8rem", color: "#b45309" };
+
+const keyNoteStyle = { fontSize: "0.8rem", color: "#7c3aed" };
 
 const resultMetaStyle = { display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.7rem", flexWrap: "wrap" };
 

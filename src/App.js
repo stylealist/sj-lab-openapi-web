@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { fetchCatalog, getPublicBaseUrl } from "./api";
 import ApiDetail from "./components/ApiDetail";
+import KeyPanel from "./components/KeyPanel";
 
 // 허브는 로컬에서 3000번 포트에 따로 뜬다. 운영은 같은 오리진의 최상위 경로다.
 function resolveHubUrl() {
@@ -15,6 +16,8 @@ function App() {
   const [catalog, setCatalog] = useState(null);
   const [loadError, setLoadError] = useState("");
   const [selectedId, setSelectedId] = useState("");
+  // 실행해 보기에 함께 보낼 API 키. 화면에서만 들고 있다(저장하지 않는다).
+  const [apiKey, setApiKey] = useState("");
 
   useEffect(() => {
     fetchCatalog()
@@ -101,8 +104,9 @@ function App() {
 
         <main style={mainStyle}>
           {catalog && catalog.notice && <div style={noticeStyle}>{catalog.notice}</div>}
+          <KeyPanel selectedKey={apiKey} onSelectKey={setApiKey} />
           {selectedApi ? (
-            <ApiDetail api={selectedApi} />
+            <ApiDetail api={selectedApi} apiKey={apiKey} />
           ) : (
             !loadError && <div style={placeholderStyle}>왼쪽에서 API를 고르세요.</div>
           )}

@@ -65,11 +65,13 @@ export async function fetchCatalog() {
 /**
  * "실행해 보기" 호출. 응답 본문과 함께 걸린 시간·크기를 돌려준다.
  * 오류 응답(400·404 등)도 화면에 그대로 보여 줘야 하므로 throw 하지 않는다.
+ * apiKey 를 주면 헤더로 붙여 보낸다(사용량이 기록되고 하루 한도가 적용된다).
  */
-export async function callApi(relativePath) {
+export async function callApi(relativePath, apiKey) {
   const startedAt = performance.now();
   try {
-    const response = await fetch(getApiBaseUrl() + OPEN_API_PREFIX + relativePath);
+    const headers = apiKey ? { "X-API-Key": apiKey } : undefined;
+    const response = await fetch(getApiBaseUrl() + OPEN_API_PREFIX + relativePath, { headers });
     const text = await response.text();
     return {
       ok: response.ok,
@@ -90,6 +92,62 @@ export async function callApi(relativePath) {
       errorMessage: "요청을 보내지 못했습니다: " + error.message,
     };
   }
+}
+
+// ---------------------------------------------------------------------------
+// 내 API 키 (로그인 필요 — 토큰은 로그인 게이트가 localStorage 에 넣어 둔 값을 쓴다)
+// ---------------------------------------------------------------------------
+
+function authHeaders() {
+  const token = window.SjLabAuth ? window.SjLabAuth.getToken() : null;
+  return token ? { Authorization: "Bearer " + token } : {};
+}
+
+async function keyRequest(path, options = {}) {
+  const response = await fetch(getApiBaseUrl() + OPEN_API_PREFIX + "/keys" + path, {
+    ...options,
+    headers: { ...authHeaders(), ...(options.headers || {}) },
+  });
+  if (response.status === 204) return null;
+
+  const text = await response.text();
+  let data = null;
+  try {
+    data = text ? JSON.parse(text) : null;
+  } catch (e) {
+    data = null;
+  }
+  if (!response.ok) {
+    const message = data && data.error ? data.error.message : "요청에 실패했습니다 (HTTP " + response.status + ")";
+    const error = new Error(message);
+    error.code = data && data.error ? data.error.code : "";
+    error.status = response.status;
+    throw error;
+  }
+  return data;
+}
+
+/** 키 기능을 쓸 수 있는 상태인지(로그인 없이 확인 가능) */
+export async function fetchKeyStatus() {
+  const response = await fetch(getApiBaseUrl() + OPEN_API_PREFIX + "/keys/status");
+  if (!response.ok) return { ready: false, message: "키 기능 상태를 확인하지 못했습니다." };
+  return response.json();
+}
+
+export function fetchMyKeys() {
+  return keyRequest("");
+}
+
+export function issueKey(label) {
+  return keyRequest("", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ label }),
+  });
+}
+
+export function revokeKey(keyId) {
+  return keyRequest("/" + keyId, { method: "DELETE" });
 }
 
 export function formatBytes(bytes) {
