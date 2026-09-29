@@ -1,2 +1,51 @@
 # sj-lab-openapi-web
-sj-lab OpenAPI 활용 페이지 — API 문서·실행해보기·키 관리 (React + Webpack)
+
+sj-lab이 공개한 API를 **보고, 바로 눌러 보고, 코드로 복사해 가는 페이지**입니다.
+허브(`sj-lab.co.kr`)의 네 번째 카드 **OpenAPI**에서 들어옵니다.
+
+- 운영 주소: `https://sj-lab.co.kr/openapi/` (배포 후)
+- 로컬 주소: `http://localhost:4100`
+
+## 화면
+
+| 영역 | 내용 |
+|---|---|
+| 왼쪽 | API 목록 — 공공데이터 6종 · 시설물 3종 · 행정구역 3종 (묶음별 설명 포함) |
+| 오른쪽 위 | 고른 API의 설명과 **실제 호출 주소**(복사 버튼) |
+| 파라미터 | 이름 · 필수 여부 · 설명 · 입력칸. 예시값이 미리 채워져 있습니다 |
+| 실행해 보기 | 그 자리에서 호출하고 **상태 · 걸린 시간 · 크기 · 응답 본문**을 보여 줍니다 |
+| 샘플 코드 | curl / JavaScript / Python — 지금 입력한 값이 그대로 들어간 코드를 복사 |
+
+**화면 구성은 코드에 적혀 있지 않습니다.** 서버(`sj-lab-openapi`)의 `GET /open-api/catalog`가 내려주는
+API 목록을 읽어 그립니다. 그래서 API가 늘어나면 이 페이지는 고치지 않아도 항목이 함께 늘어납니다.
+
+## 실행
+
+```bash
+npm install
+npm start        # http://localhost:4100 (자동으로 브라우저가 열립니다)
+npm run build    # build/ 에 번들 생성
+```
+
+필요한 것: 로그인 서버(`sj-lab-authserver`)와 API 서버(`sj-lab-openapi`). 기동 순서는 허브 저장소
+`mapservice-rest`의 `docs/dev-environment.md`를 따릅니다.
+
+- **API 호출은 webpack 개발 서버가 대신 넘겨줍니다**(`/open-api` → `http://localhost:8100`).
+  같은 주소로 부르는 셈이라 CORS 설정이 필요 없습니다.
+- 게이트웨이에 `/open-api` 경로를 넣기 전이거나 백엔드만 따로 띄워 확인할 때는 대상 주소를 바꿉니다.
+
+```bash
+set OPENAPI_PROXY_TARGET=http://localhost:8110 && npm start
+```
+
+## 로그인
+
+접속하면 다른 sj-lab 사이트와 같은 로그인 화면으로 갑니다(`public/index.html` 맨 위 인라인 스크립트).
+로그인하면 토큰이 이 사이트의 `localStorage`에 저장되고, 오른쪽 위에 아이디와 로그아웃 버튼이 보입니다.
+
+## 현재 한계
+
+- **API 키 발급·사용량 화면은 아직 없습니다**(다음 단계). 지금은 공개 API를 그냥 부릅니다.
+- 응답이 아주 크면 화면에는 앞부분만 보여 줍니다(브라우저가 멈추지 않도록). 전체는 주소를 직접 열어 확인합니다.
+- GeoJSON을 지도로 미리 보여 주는 기능은 아직 없습니다. 본문(JSON)만 표시합니다.
+- 허브의 OpenAPI 카드는 아직 잠겨 있습니다(4단계에서 엽니다).
