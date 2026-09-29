@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-sj-lab 저장소를 넘나드는 작업의 총괄 기준 저장소는 `C:\developer\workspace\mapservice-rest`입니다.
+sj-lab 저장소를 넘나드는 작업의 총괄 기준 저장소는 `C:\developer\workspace\sj-lab`입니다.
 전체 구조·API 계약은 그 저장소의 `docs/system-architecture.md`, 로컬 포트·기동 순서는 `docs/dev-environment.md`를 봅니다.
 
 ## 프로젝트 개요
