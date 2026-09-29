@@ -88,9 +88,9 @@ const tabStyle = {
 const tabActiveStyle = {
   ...tabStyle,
   // border 와 borderColor 를 섞어 쓰면 React 가 경고를 낸다 — 항상 border 한 줄로 덮어쓴다.
-  border: "1px solid #8b5cf6",
-  color: "#7c3aed",
-  background: "#f5f3ff",
+  border: "1px solid #2563eb",
+  color: "#1e40af",
+  background: "#eff6ff",
 };
 
 const copyButtonStyle = { ...tabStyle, marginLeft: "auto" };

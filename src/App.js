@@ -18,6 +18,7 @@ function App() {
   const [selectedId, setSelectedId] = useState("");
   // 실행해 보기에 함께 보낼 API 키. 화면에서만 들고 있다(저장하지 않는다).
   const [apiKey, setApiKey] = useState("");
+  const [isHubHovered, setIsHubHovered] = useState(false);
 
   useEffect(() => {
     fetchCatalog()
@@ -53,8 +54,24 @@ function App() {
           </div>
         </div>
         <div style={headerRightStyle}>
-          <a href={resolveHubUrl()} style={hubLinkStyle}>
-            허브로
+          <a
+            href={resolveHubUrl()}
+            title="sj-lab 허브로 이동"
+            style={isHubHovered ? { ...hubLinkStyle, ...hubLinkHoverStyle } : hubLinkStyle}
+            onMouseEnter={() => setIsHubHovered(true)}
+            onMouseLeave={() => setIsHubHovered(false)}
+            onFocus={() => setIsHubHovered(true)}
+            onBlur={() => setIsHubHovered(false)}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path
+                d="M4 5h6v6H4zM14 5h6v6h-6zM4 13h6v6H4zM14 13h6v6h-6z"
+                stroke="currentColor"
+                strokeWidth="1.7"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <span>허브</span>
           </a>
           {username && <span style={userStyle}>{username} 님</span>}
           <button type="button" style={logoutButtonStyle} onClick={handleLogout}>
@@ -131,7 +148,7 @@ const headerStyle = {
   justifyContent: "space-between",
   gap: "1rem",
   padding: "0.9rem 1.5rem",
-  background: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
+  background: "linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%)",
   color: "#ffffff",
   boxShadow: "0 1px 3px rgba(15, 23, 42, 0.18)",
   position: "sticky",
@@ -167,12 +184,25 @@ const brandSubStyle = { fontSize: "0.78rem", opacity: 0.85 };
 const headerRightStyle = { display: "flex", alignItems: "center", gap: "0.7rem" };
 
 const hubLinkStyle = {
-  color: "#ffffff",
+  display: "inline-flex",
+  alignItems: "center",
+  gap: "0.35rem",
+  padding: "0.38rem 0.8rem",
+  borderRadius: "999px",
+  border: "1px solid rgba(148, 178, 232, 0.28)",
+  color: "rgba(226, 232, 240, 0.82)",
+  fontSize: "0.78rem",
+  fontWeight: 500,
+  letterSpacing: "0.02em",
   textDecoration: "none",
-  fontSize: "0.85rem",
-  padding: "0.35rem 0.7rem",
-  borderRadius: "6px",
-  border: "1px solid rgba(255, 255, 255, 0.4)",
+  whiteSpace: "nowrap",
+  transition: "background 0.18s ease, color 0.18s ease, border-color 0.18s ease",
+};
+
+const hubLinkHoverStyle = {
+  background: "rgba(255, 255, 255, 0.1)",
+  border: "1px solid rgba(148, 178, 232, 0.5)",
+  color: "#ffffff",
 };
 
 const userStyle = { fontSize: "0.85rem", opacity: 0.95 };
@@ -247,17 +277,17 @@ const apiItemStyle = {
 const apiItemActiveStyle = {
   ...apiItemStyle,
   // border 와 borderColor 를 섞어 쓰면 React 가 경고를 낸다 — 항상 border 한 줄로 덮어쓴다.
-  border: "1px solid #8b5cf6",
-  background: "#f5f3ff",
-  boxShadow: "0 0 0 1px #8b5cf6 inset",
+  border: "1px solid #2563eb",
+  background: "#eff6ff",
+  boxShadow: "0 0 0 1px #2563eb inset",
 };
 
 const methodBadgeStyle = {
   fontSize: "0.65rem",
   fontWeight: 600,
   letterSpacing: "0.04em",
-  color: "#7c3aed",
-  background: "#ede9fe",
+  color: "#1e40af",
+  background: "#dbeafe",
   borderRadius: "4px",
   padding: "0.15rem 0.35rem",
 };
@@ -280,9 +310,9 @@ const sidebarLoadingStyle = { fontSize: "0.85rem", color: "#64748b" };
 const mainStyle = { flex: 1, minWidth: 0 };
 
 const noticeStyle = {
-  background: "#eef2ff",
-  border: "1px solid #c7d2fe",
-  color: "#3730a3",
+  background: "#f1f5f9",
+  border: "1px solid #cbd5e1",
+  color: "#334155",
   borderRadius: "10px",
   padding: "0.7rem 0.9rem",
   fontSize: "0.85rem",

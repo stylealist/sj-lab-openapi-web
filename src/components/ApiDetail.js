@@ -172,8 +172,8 @@ const titleStyle = {
 const methodStyle = {
   fontSize: "0.7rem",
   fontWeight: 600,
-  color: "#7c3aed",
-  background: "#ede9fe",
+  color: "#1e40af",
+  background: "#dbeafe",
   borderRadius: "4px",
   padding: "0.18rem 0.4rem",
 };
@@ -251,7 +251,7 @@ const inputStyle = {
 const runRowStyle = { display: "flex", alignItems: "center", gap: "0.7rem", marginTop: "1rem" };
 
 const runButtonStyle = {
-  background: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
+  background: "linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%)",
   color: "#ffffff",
   border: "none",
   borderRadius: "8px",
@@ -262,7 +262,7 @@ const runButtonStyle = {
 
 const hintStyle = { fontSize: "0.8rem", color: "#b45309" };
 
-const keyNoteStyle = { fontSize: "0.8rem", color: "#7c3aed" };
+const keyNoteStyle = { fontSize: "0.8rem", color: "#1e40af" };
 
 const resultMetaStyle = { display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.7rem", flexWrap: "wrap" };
 

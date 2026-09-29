@@ -196,7 +196,7 @@ const inputStyle = {
 };
 
 const primaryButtonStyle = {
-  background: "linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%)",
+  background: "linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%)",
   color: "#ffffff",
   border: "none",
   borderRadius: "8px",
@@ -220,14 +220,14 @@ const issuedBoxStyle = {
   alignItems: "center",
   gap: "0.5rem",
   flexWrap: "wrap",
-  background: "#f5f3ff",
-  border: "1px solid #ddd6fe",
+  background: "#eff6ff",
+  border: "1px solid #bfdbfe",
   borderRadius: "8px",
   padding: "0.7rem 0.8rem",
   marginBottom: "0.8rem",
 };
 
-const issuedNoticeStyle = { width: "100%", fontSize: "0.82rem", color: "#6d28d9" };
+const issuedNoticeStyle = { width: "100%", fontSize: "0.82rem", color: "#1d4ed8" };
 
 const issuedKeyStyle = {
   flex: 1,

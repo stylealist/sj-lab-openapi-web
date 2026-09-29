@@ -29,6 +29,10 @@ sj-lab 저장소를 넘나드는 작업의 총괄 기준 저장소는 `C:\develo
 - 키 영역은 `GET /keys/status`의 `ready`가 참일 때만 목록·발급을 보여 줍니다. 준비되지 않은 환경에서 발급 버튼을 눌러도 503만 나오므로 상태 확인을 건너뛰지 말 것.
 - 인라인 style 객체에서 `border`와 `borderColor`를 섞어 쓰지 말 것. 선택 상태를 `...baseStyle` 위에 덮어쓸 때
   `borderColor`만 바꾸면 React가 "shorthand 충돌" 경고를 냅니다 — 항상 `border` 한 줄로 덮어씁니다(2026-09-29 실제 발생).
+- **헤더의 허브 버튼(`hubLinkStyle`)은 `sj-lab-mapservice`의 `.hub-link`(`css/components/header.css`)와 같은 모양으로
+  맞춰 둡니다**(2×2 격자 아이콘 + "허브" 라벨 + 알약 모양, 2026-09-30). 한쪽 모양을 바꾸면 다른 쪽도 고칠 것 —
+  두 사이트를 오갈 때 같은 자리의 같은 버튼으로 보여야 합니다. 이 저장소는 인라인 style 객체만 쓰므로 `:hover`를
+  쓸 수 없어 `isHubHovered` 상태로 대신합니다. 화면이 좁을 때 라벨을 숨기는 mapservice의 미디어 쿼리는 없습니다.
 - 응답 본문은 `prettyPrint()`가 길이를 잘라 보여 줍니다(기본 20,000자). 이 상한을 없애면 큰 GeoJSON에서
   브라우저가 멈춥니다.
 - 검증은 `npm start` 후 브라우저(또는 헤드리스)로 직접 확인합니다. 테스트 프레임워크는 없습니다.
@@ -43,7 +47,7 @@ sj-lab 저장소를 넘나드는 작업의 총괄 기준 저장소는 `C:\develo
 | `src/components/KeyPanel.js` | 내 API 키 — 발급·목록·사용량·폐기, 실행에 쓸 키 고르기 |
 | `src/api.js` | 주소 계산, 호출, 크기·시간 측정, 보기 좋게 출력 |
 | `public/index.html` | 로그인 게이트(인라인) + 초기 로딩 화면 |
-| `public/favicon.svg` | 허브 OpenAPI 카드와 같은 보라 그라데이션. 카드 색을 바꾸면 같이 고칠 것 |
+| `public/favicon.svg` | 허브 OpenAPI 카드와 같은 딥 네이비 블루 그라데이션. 카드 색을 바꾸면 같이 고칠 것 |
 
 ## 현재 범위와 남은 작업
 
