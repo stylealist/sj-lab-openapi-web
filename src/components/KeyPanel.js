@@ -1,9 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { fetchKeyStatus, fetchMyKeys, revokeKey } from "../api";
+import { fetchKeyStatus, fetchMyKeys, revokeKey, getPublicBaseUrl } from "../api";
 
 /**
- * 내 API 키 영역. 키를 발급하면 원문은 **그때 한 번만** 보여 준다(서버에 해시만 남는다).
- * 키 기능이 준비되지 않은 환경에서는 안내만 보여 주고, 공개 API 호출은 그대로 쓸 수 있다.
+ * 내 API 키 영역. 계정마다 키 1개가 자동으로 배정되고, 그 값을 그대로 보여 준다
+ * (2026-10-01부터 원문을 저장한다 — 본인이 언제든 보고 복사할 수 있어야 해서).
+ * 만들기 버튼은 없다. 유출됐을 때 바꾸는 길만 아래에 한 줄로 남겨 둔다.
+ * 키 기능이 준비되지 않은 환경에서는 안내만 보여 준다.
  */
 function KeyPanel({ selectedKey, onSelectKey, usageTick }) {
   const [status, setStatus] = useState(null);
@@ -11,17 +13,15 @@ function KeyPanel({ selectedKey, onSelectKey, usageTick }) {
   const [issued, setIssued] = useState(null);
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  // 서버는 키가 없으면 목록을 줄 때 한 개를 자동으로 배정하고, 그때만 원문(issued)을 함께 준다.
-  // 원문은 저장되지 않으니 이 한 번을 놓치면 다시 볼 수 없다 — 받으면 바로 화면에 띄우고 골라 둔다.
+  // 서버는 키가 없으면 목록을 줄 때 한 개를 자동으로 배정하고, 그때 원문(issued)을 함께 준다.
+  // 원문 컬럼이 있는 DB 라면 그다음부터는 목록 항목 자체에 원문이 들어 있다.
   const loadKeys = () => {
     fetchMyKeys()
       .then((data) => {
         setKeys(data ? data.items : []);
-        if (data && data.issued) {
-          setIssued(data.issued);
-          onSelectKey(data.issued.apiKey);
-        }
+        if (data && data.issued) setIssued(data.issued);
       })
       .catch((error) => setMessage(error.message));
   };
@@ -38,6 +38,14 @@ function KeyPanel({ selectedKey, onSelectKey, usageTick }) {
   useEffect(() => {
     if (usageTick && status && status.ready) loadKeys();
   }, [usageTick]);
+
+  // 내 키를 실행해 보기에 자동으로 물려 준다 — 사용자가 어디에 붙여 넣을 일이 없어야 한다.
+  // 원문을 모르는 환경(원문 컬럼 없는 DB)에서는 비워 두고, 그때는 로그인 토큰으로 호출된다.
+  useEffect(() => {
+    const mine = keys.length > 0 ? keys[0] : null;
+    const value = (mine && mine.apiKey) || (issued && issued.apiKey) || "";
+    if (value && value !== selectedKey) onSelectKey(value);
+  }, [keys, issued]);
 
   /**
    * 키 다시 만들기. 쓰던 키를 폐기하면 목록을 다시 읽을 때 서버가 새 키를 배정하고
@@ -72,100 +80,85 @@ function KeyPanel({ selectedKey, onSelectKey, usageTick }) {
     );
   }
 
+  // 계정당 1개다. 목록이 아니라 "내 키 하나"를 보여 주는 화면이라 첫 항목만 쓴다.
+  const myKey = keys.length > 0 ? keys[0] : null;
+  // 원문은 DB 에 저장된 값(key_plain)이 우선이고, 없으면 막 배정받아 응답으로 받은 값을 쓴다.
+  const plain = (myKey && myKey.apiKey) || (issued && issued.apiKey) || "";
+  const usedRatio = myKey && myKey.dailyQuota > 0 ? myKey.todayCount / myKey.dailyQuota : 0;
+
   return (
     <div style={cardStyle}>
       <h2 style={titleStyle}>내 API 키</h2>
-      <p style={mutedStyle}>
-        키는 <strong>계정마다 1개</strong>가 자동으로 배정됩니다. 이 화면의 <strong>실행해 보기는
-        로그인만으로 동작</strong>하고, 호출은 아래 사용량에 기록됩니다.
-        키 원문은 <strong>밖에서 curl·코드로 부를 때</strong> 쓰며, 배정되는 순간에만 한 번 보여 드립니다.
-      </p>
-
-      {issued && (
-        <div style={issuedBoxStyle}>
-          <div style={issuedNoticeStyle}>{issued.notice}</div>
-          <code style={issuedKeyStyle}>{issued.apiKey}</code>
-          <button
-            type="button"
-            style={ghostButtonStyle}
-            onClick={() => navigator.clipboard.writeText(issued.apiKey)}
-          >
-            복사
-          </button>
-        </div>
-      )}
 
       {message && <p style={errorStyle}>{message}</p>}
 
-      {/* 키를 고르는 자리. 표 아래가 아니라 위에 둔다 — 실행해 보기가 이 값을 쓰기 때문에
-          여기서 비어 있으면 키 없이 호출되고 사용량도 오르지 않는다. */}
-      {/* 키 원문을 굳이 넣지 않아도 로그인 토큰으로 호출된다. 원문을 아는 사람(방금 배정받았거나
-          복사해 둔 경우)은 여기에 넣어 그 키로 부르는지 확인할 수 있다. */}
-      {keys.length > 0 && (
-        <div style={useKeyRowStyle}>
-          <label style={useKeyLabelStyle}>
-            키 원문으로 호출(선택)
-            <input
-              type="text"
-              value={selectedKey}
-              onChange={(event) => onSelectKey(event.target.value)}
-              placeholder="비워 두면 로그인 상태로 호출합니다"
-              style={{ ...inputStyle, marginLeft: "0.5rem", minWidth: "320px" }}
-            />
-          </label>
-          {issued && issued.apiKey !== selectedKey && (
-            <button type="button" style={ghostButtonStyle} onClick={() => onSelectKey(issued.apiKey)}>
-              배정된 키 넣기
-            </button>
-          )}
-          {selectedKey ? (
-            <span style={keyOnStyle}>이 키로 호출합니다 · 사용량에 반영됩니다</span>
-          ) : (
-            <span style={keyOnStyle}>로그인 상태로 호출합니다 · 사용량에 반영됩니다</span>
-          )}
-        </div>
-      )}
-
-      {keys.length === 0 ? (
-        <p style={mutedStyle}>아직 발급한 키가 없습니다.</p>
+      {!myKey ? (
+        <p style={mutedStyle}>키를 준비하는 중입니다…</p>
       ) : (
-        <table style={tableStyle}>
-          <thead>
-            <tr>
-              <th style={thStyle}>키</th>
-              <th style={thStyle}>이름</th>
-              <th style={thStyle}>오늘 사용</th>
-              <th style={thStyle}>마지막 사용</th>
-              <th style={thStyle}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {keys.map((key) => (
-              <tr key={key.keyId}>
-                <td style={tdStyle}>
-                  <code>{key.keyPrefix}…</code>
-                </td>
-                <td style={tdStyle}>{key.label}</td>
-                <td style={tdStyle}>
-                  {key.todayCount} / {key.dailyQuota}
-                </td>
-                <td style={tdStyle}>{key.lastUsedAt || "-"}</td>
-                <td style={tdStyle}>
-                  <button
-                    type="button"
-                    style={ghostButtonStyle}
-                    onClick={() => handleReissue(key.keyId, key.keyPrefix)}
-                    disabled={busy}
-                  >
-                    키 다시 만들기
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+        <>
+          {/* 1) 키 값 — 잘리지 않게 전체를 보여 주고 복사만 제공한다(만들기 버튼 없음) */}
+          <div style={keyBoxStyle}>
+            <span style={keyBoxLabelStyle}>키</span>
+            {plain ? (
+              <>
+                <code style={keyValueStyle}>{plain}</code>
+                <button
+                  type="button"
+                  style={copyButtonStyle}
+                  onClick={() => {
+                    navigator.clipboard.writeText(plain);
+                    setCopied(true);
+                    window.setTimeout(() => setCopied(false), 1500);
+                  }}
+                >
+                  {copied ? "복사했습니다" : "복사"}
+                </button>
+              </>
+            ) : (
+              <code style={keyValueStyle}>{myKey.keyPrefix}…</code>
+            )}
+          </div>
 
+          {/* 2) 오늘 사용량 — 숫자와 막대를 함께 */}
+          <div style={usageRowStyle}>
+            <span style={usageTextStyle}>
+              오늘 <strong style={usageNumStyle}>{myKey.todayCount}</strong> / {myKey.dailyQuota} 회
+            </span>
+            <span style={usageBarOuterStyle}>
+              <span
+                style={{
+                  ...usageBarInnerStyle,
+                  width: Math.min(100, Math.round(usedRatio * 100)) + "%",
+                }}
+              />
+            </span>
+            <span style={usageMetaStyle}>마지막 사용 {myKey.lastUsedAt || "없음"}</span>
+          </div>
+
+          {/* 3) 쓰는 법 — 헤더가 기본. 주소에 넣는 방식은 로그에 남으므로 아래에서 따로 안내한다 */}
+          <div style={howToStyle}>
+            <div style={howToTitleStyle}>쓰는 법</div>
+            <code style={howToCodeStyle}>
+              {'curl -H "X-API-Key: ' + (plain || "내_키") + '" \\\n  "' +
+                getPublicBaseUrl() +
+                '/v1/admin-area/sido"'}
+            </code>
+            <p style={howToNoteStyle}>
+              이 화면의 <strong>실행해 보기</strong>는 이 키를 자동으로 붙여 보냅니다. 따로 넣을 것이 없습니다.
+            </p>
+          </div>
+
+          {/* 4) 키 바꾸기 — 눈에 띄지 않게 한 줄로. 유출됐을 때 바꿀 길은 남겨 둔다 */}
+          <button
+            type="button"
+            style={reissueLinkStyle}
+            onClick={() => handleReissue(myKey.keyId, myKey.keyPrefix)}
+            disabled={busy}
+          >
+            키가 유출됐다면 — 새 키로 바꾸기
+          </button>
+        </>
+      )}
     </div>
   );
 }
@@ -190,77 +183,113 @@ const titleStyle = {
 
 const mutedStyle = { fontSize: "0.85rem", color: "#64748b", lineHeight: 1.6 };
 
-const inputStyle = {
-  border: "1px solid #cbd5e1",
-  borderRadius: "6px",
-  padding: "0.45rem 0.6rem",
-  fontSize: "0.85rem",
-  color: "#0f172a",
-  minWidth: "220px",
-};
-
-const ghostButtonStyle = {
-  background: "#ffffff",
-  color: "#475569",
-  border: "1px solid #cbd5e1",
-  borderRadius: "6px",
-  padding: "0.35rem 0.6rem",
-  fontSize: "0.8rem",
-  cursor: "pointer",
-};
-
-const issuedBoxStyle = {
-  display: "flex",
-  alignItems: "center",
-  gap: "0.5rem",
-  flexWrap: "wrap",
-  background: "#eff6ff",
-  border: "1px solid #bfdbfe",
-  borderRadius: "8px",
-  padding: "0.7rem 0.8rem",
-  marginBottom: "0.8rem",
-};
-
-const issuedNoticeStyle = { width: "100%", fontSize: "0.82rem", color: "#1d4ed8" };
-
-const issuedKeyStyle = {
-  flex: 1,
-  minWidth: "260px",
-  background: "#0f172a",
-  color: "#e2e8f0",
-  borderRadius: "6px",
-  padding: "0.45rem 0.6rem",
-  fontSize: "0.8rem",
-  wordBreak: "break-all",
-};
-
-const errorStyle = { fontSize: "0.85rem", color: "#b91c1c", margin: "0.4rem 0" };
-
-const tableStyle = { width: "100%", borderCollapse: "collapse", fontSize: "0.85rem", marginTop: "0.6rem" };
-
-const thStyle = {
-  textAlign: "left",
-  color: "#64748b",
-  fontWeight: 500,
-  fontSize: "0.75rem",
-  padding: "0.4rem 0.5rem",
-  borderBottom: "1px solid #e2e8f0",
-};
-
-const tdStyle = { padding: "0.5rem", borderBottom: "1px solid #f1f5f9", color: "#334155" };
-
-const useKeyRowStyle = {
+const keyBoxStyle = {
   display: "flex",
   alignItems: "center",
   gap: "0.6rem",
   flexWrap: "wrap",
-  marginTop: "0.9rem",
-  paddingTop: "0.8rem",
-  borderTop: "1px solid #f1f5f9",
+  background: "#eff6ff",
+  border: "1px solid #bfdbfe",
+  borderRadius: "10px",
+  padding: "0.7rem 0.9rem",
+  margin: "0.6rem 0",
 };
 
-const useKeyLabelStyle = { fontSize: "0.85rem", color: "#334155", display: "flex", alignItems: "center" };
+const keyBoxLabelStyle = {
+  fontSize: "0.72rem",
+  fontWeight: 600,
+  letterSpacing: "0.06em",
+  color: "#1e40af",
+  textTransform: "uppercase",
+};
 
-const keyOnStyle = { fontSize: "0.8rem", color: "#1e40af", fontWeight: 500 };
+const keyValueStyle = {
+  flex: 1,
+  minWidth: "260px",
+  fontFamily: "SFMono-Regular, Consolas, monospace",
+  fontSize: "0.86rem",
+  color: "#0f172a",
+  wordBreak: "break-all",
+};
 
-const keyOffStyle = { fontSize: "0.8rem", color: "#b45309" };
+const copyButtonStyle = {
+  border: "1px solid #2563eb",
+  background: "#ffffff",
+  color: "#1e40af",
+  borderRadius: "6px",
+  padding: "0.32rem 0.7rem",
+  fontSize: "0.8rem",
+  fontWeight: 500,
+  cursor: "pointer",
+  whiteSpace: "nowrap",
+};
+
+const usageRowStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: "0.7rem",
+  flexWrap: "wrap",
+  margin: "0.5rem 0 0.9rem",
+};
+
+const usageTextStyle = { fontSize: "0.85rem", color: "#334155", whiteSpace: "nowrap" };
+
+const usageNumStyle = { color: "#1e40af", fontSize: "1rem" };
+
+const usageBarOuterStyle = {
+  flex: 1,
+  minWidth: "120px",
+  height: "6px",
+  background: "#e2e8f0",
+  borderRadius: "999px",
+  overflow: "hidden",
+};
+
+const usageBarInnerStyle = {
+  display: "block",
+  height: "100%",
+  background: "linear-gradient(90deg, #2563eb, #1e3a8a)",
+};
+
+const usageMetaStyle = { fontSize: "0.78rem", color: "#94a3b8", whiteSpace: "nowrap" };
+
+const howToStyle = {
+  background: "#f8fafc",
+  border: "1px solid #e2e8f0",
+  borderRadius: "10px",
+  padding: "0.7rem 0.9rem",
+};
+
+const howToTitleStyle = {
+  fontSize: "0.72rem",
+  fontWeight: 600,
+  letterSpacing: "0.06em",
+  color: "#64748b",
+  textTransform: "uppercase",
+  marginBottom: "0.4rem",
+};
+
+const howToCodeStyle = {
+  display: "block",
+  whiteSpace: "pre-wrap",
+  wordBreak: "break-all",
+  fontFamily: "SFMono-Regular, Consolas, monospace",
+  fontSize: "0.8rem",
+  color: "#0f172a",
+  lineHeight: 1.7,
+};
+
+const howToNoteStyle = { fontSize: "0.8rem", color: "#64748b", margin: "0.5rem 0 0" };
+
+const reissueLinkStyle = {
+  border: "none",
+  background: "none",
+  padding: 0,
+  marginTop: "0.8rem",
+  fontSize: "0.78rem",
+  color: "#94a3b8",
+  textDecoration: "underline",
+  cursor: "pointer",
+};
+const errorStyle = { fontSize: "0.85rem", color: "#b91c1c", margin: "0.4rem 0" };
+

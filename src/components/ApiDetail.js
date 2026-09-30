@@ -53,6 +53,16 @@ function ApiDetail({ api, apiKey, onCalled }) {
     if (apiKey && onCalled) onCalled();
   };
 
+  // 키를 주소에 넣은 형태. 브라우저 주소창처럼 헤더를 못 넣는 곳을 위해 보여 주되,
+  // 로그에 남는다는 점을 바로 아래에 적어 둔다. 실제 호출과 샘플 코드는 헤더를 쓴다.
+  const urlWithKey = apiKey
+    ? fullUrl + (fullUrl.includes("?") ? "&" : "?") + "apiKey=" + apiKey
+    : fullUrl;
+
+  const handleCopyUrlWithKey = () => {
+    navigator.clipboard.writeText(urlWithKey);
+  };
+
   const handleCopyUrl = () => {
     navigator.clipboard.writeText(fullUrl);
   };
@@ -71,6 +81,20 @@ function ApiDetail({ api, apiKey, onCalled }) {
             주소 복사
           </button>
         </div>
+        {apiKey && (
+          <div style={urlRowStyle}>
+            <code style={urlWithKeyStyle}>{urlWithKey}</code>
+            <button type="button" style={ghostButtonStyle} onClick={handleCopyUrlWithKey}>
+              키 포함 주소 복사
+            </button>
+          </div>
+        )}
+        {apiKey && (
+          <p style={keyUrlNoteStyle}>
+            주소에 키를 넣으면 브라우저 방문기록·서버 로그에 남습니다. 프로그램에서는 아래 샘플 코드처럼
+            <strong> X-API-Key 헤더</strong>로 보내는 편이 안전합니다.
+          </p>
+        )}
       </div>
 
       <div style={cardStyle}>
@@ -183,6 +207,18 @@ const methodStyle = {
 const summaryStyle = { color: "#475569", fontSize: "0.92rem", lineHeight: 1.6, margin: "0.5rem 0 0.9rem" };
 
 const urlRowStyle = { display: "flex", alignItems: "center", gap: "0.6rem", flexWrap: "wrap" };
+
+const urlWithKeyStyle = {
+  flex: 1,
+  minWidth: "260px",
+  marginTop: "0.5rem",
+  fontFamily: "SFMono-Regular, Consolas, monospace",
+  fontSize: "0.78rem",
+  color: "#475569",
+  wordBreak: "break-all",
+};
+
+const keyUrlNoteStyle = { fontSize: "0.78rem", color: "#b45309", margin: "0.4rem 0 0", lineHeight: 1.6 };
 
 const urlStyle = {
   flex: 1,
