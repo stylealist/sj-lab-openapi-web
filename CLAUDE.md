@@ -35,6 +35,7 @@ sj-lab 저장소를 넘나드는 작업의 총괄 기준 저장소는 `C:\develo
   쓸 수 없어 `isHubHovered` 상태로 대신합니다. 화면이 좁을 때 라벨을 숨기는 mapservice의 미디어 쿼리는 없습니다.
 - 응답 본문은 `prettyPrint()`가 길이를 잘라 보여 줍니다(기본 20,000자). 이 상한을 없애면 큰 GeoJSON에서
   브라우저가 멈춥니다.
+- 소개 · 저장소 문의 화면의 저장소 목록과 인프라 링크는 손으로 관리한다. 저장소가 늘거나 주소가 바뀌면 이 두 곳과 sj-lab-mapservice 의 같은 화면을 함께 고칠 것. 없는 주소는 넣지 말 것.
 - 검증은 `npm start` 후 브라우저(또는 헤드리스)로 직접 확인합니다. 테스트 프레임워크는 없습니다.
 
 ## 파일 구성
@@ -42,6 +43,8 @@ sj-lab 저장소를 넘나드는 작업의 총괄 기준 저장소는 `C:\develo
 | 파일 | 역할 |
 |---|---|
 | `src/App.js` | 헤더 · 사이드바(API 목록) · 본문 배치, 카탈로그 로딩 |
+| `src/components/AboutPage.js` | 소개 — 숫자 지표 · 파이프라인 단계 · 기능 설명 · 기술 스택 |
+| `src/components/ContactPage.js` | 저장소 · 문의 — 만든 사람 · GitHub 저장소 목록 · 이메일 · 인프라 링크 |
 | `src/components/ApiDetail.js` | 고른 API의 설명 · 파라미터 표 · 실행해 보기 · 응답 |
 | `src/components/CodeSamples.js` | curl / JavaScript / Python 샘플 코드 |
 | `src/components/KeyPanel.js` | 내 API 키 — 발급·목록·사용량·폐기, 실행에 쓸 키 고르기 |
