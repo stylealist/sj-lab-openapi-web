@@ -80,8 +80,8 @@ function KeyPanel({ selectedKey, onSelectKey, usageTick }) {
     <div style={cardStyle}>
       <h2 style={titleStyle}>내 API 키</h2>
       <p style={mutedStyle}>
-        키를 붙여 부르면 호출이 기록되고 하루 한도가 적용됩니다. 키 없이도 부를 수 있습니다.
-        키는 <strong>계정당 1개</strong>입니다.
+        데이터 API는 <strong>키가 있어야 호출됩니다</strong>(키 없이 부르면 401). 호출은 기록되고
+        하루 한도가 적용됩니다. 키는 <strong>계정당 1개</strong>입니다.
       </p>
 
       {/* 계정당 1개라, 이미 있으면 발급 영역을 감춘다 — 눌러도 서버가 409 만 돌려준다.
@@ -144,7 +144,7 @@ function KeyPanel({ selectedKey, onSelectKey, usageTick }) {
             <span style={keyOnStyle}>이 키로 호출합니다 · 사용량에 반영됩니다</span>
           ) : (
             <span style={keyOffStyle}>
-              비어 있어 키 없이 호출됩니다. 키 원문은 발급할 때만 보이니, 모르면 폐기 후 다시 발급하세요.
+              비어 있어 실행해 보기가 401이 납니다. 키 원문은 발급할 때만 보이니, 모르면 폐기 후 다시 발급하세요.
             </span>
           )}
         </div>
