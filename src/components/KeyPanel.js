@@ -72,20 +72,29 @@ function KeyPanel({ selectedKey, onSelectKey }) {
       <h2 style={titleStyle}>내 API 키</h2>
       <p style={mutedStyle}>
         키를 붙여 부르면 호출이 기록되고 하루 한도가 적용됩니다. 키 없이도 부를 수 있습니다.
+        키는 <strong>계정당 1개</strong>입니다.
       </p>
 
-      <div style={issueRowStyle}>
-        <input
-          type="text"
-          value={label}
-          onChange={(event) => setLabel(event.target.value)}
-          placeholder="키 이름 (예: 테스트용)"
-          style={inputStyle}
-        />
-        <button type="button" style={primaryButtonStyle} onClick={handleIssue} disabled={busy}>
-          키 발급
-        </button>
-      </div>
+      {/* 계정당 1개라, 이미 있으면 발급 영역을 감춘다 — 눌러도 서버가 409 만 돌려준다.
+          새로 받으려면 아래 목록에서 폐기하면 이 영역이 다시 나타난다. */}
+      {keys.length === 0 ? (
+        <div style={issueRowStyle}>
+          <input
+            type="text"
+            value={label}
+            onChange={(event) => setLabel(event.target.value)}
+            placeholder="키 이름 (예: 테스트용)"
+            style={inputStyle}
+          />
+          <button type="button" style={primaryButtonStyle} onClick={handleIssue} disabled={busy}>
+            키 발급
+          </button>
+        </div>
+      ) : (
+        <p style={mutedStyle}>
+          이미 발급한 키가 있습니다. 새로 받으려면 아래에서 폐기한 뒤 다시 발급하세요.
+        </p>
+      )}
 
       {issued && (
         <div style={issuedBoxStyle}>
