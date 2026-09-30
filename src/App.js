@@ -20,6 +20,8 @@ function App() {
   const [selectedId, setSelectedId] = useState("");
   // 실행해 보기에 함께 보낼 API 키. 화면에서만 들고 있다(저장하지 않는다).
   const [apiKey, setApiKey] = useState("");
+  // 실행해 보기로 호출할 때마다 1씩 올린다. KeyPanel 이 이 값을 보고 "오늘 사용"을 다시 읽는다.
+  const [usageTick, setUsageTick] = useState(0);
   const [isHubHovered, setIsHubHovered] = useState(false);
   const [isLogoutHovered, setIsLogoutHovered] = useState(false);
   const [activePage, setActivePage] = useState("docs");
@@ -212,9 +214,13 @@ function App() {
 
           <main style={mainStyle}>
             {catalog && catalog.notice && <div style={noticeStyle}>{catalog.notice}</div>}
-            <KeyPanel selectedKey={apiKey} onSelectKey={setApiKey} />
+            <KeyPanel selectedKey={apiKey} onSelectKey={setApiKey} usageTick={usageTick} />
             {selectedApi ? (
-              <ApiDetail api={selectedApi} apiKey={apiKey} />
+              <ApiDetail
+                api={selectedApi}
+                apiKey={apiKey}
+                onCalled={() => setUsageTick((tick) => tick + 1)}
+              />
             ) : (
               !loadError && <div style={placeholderStyle}>왼쪽에서 API를 고르세요.</div>
             )}

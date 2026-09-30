@@ -11,7 +11,7 @@ import {
 import CodeSamples from "./CodeSamples";
 
 /** 선택한 API 하나의 문서 + 실행해 보기 + 샘플 코드 */
-function ApiDetail({ api, apiKey }) {
+function ApiDetail({ api, apiKey, onCalled }) {
   const [values, setValues] = useState({});
   const [result, setResult] = useState(null);
   const [running, setRunning] = useState(false);
@@ -49,6 +49,8 @@ function ApiDetail({ api, apiKey }) {
     setRunning(true);
     setResult(await callApi(requestPath, apiKey));
     setRunning(false);
+    // 키를 붙여 부른 경우에만 사용량이 늘어난다. 호출 직후 "오늘 사용"을 다시 읽게 알린다.
+    if (apiKey && onCalled) onCalled();
   };
 
   const handleCopyUrl = () => {

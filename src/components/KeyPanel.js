@@ -5,7 +5,7 @@ import { fetchKeyStatus, fetchMyKeys, issueKey, revokeKey } from "../api";
  * 내 API 키 영역. 키를 발급하면 원문은 **그때 한 번만** 보여 준다(서버에 해시만 남는다).
  * 키 기능이 준비되지 않은 환경에서는 안내만 보여 주고, 공개 API 호출은 그대로 쓸 수 있다.
  */
-function KeyPanel({ selectedKey, onSelectKey }) {
+function KeyPanel({ selectedKey, onSelectKey, usageTick }) {
   const [status, setStatus] = useState(null);
   const [keys, setKeys] = useState([]);
   const [issued, setIssued] = useState(null);
@@ -26,6 +26,12 @@ function KeyPanel({ selectedKey, onSelectKey }) {
     });
   }, []);
 
+  // 실행해 보기로 호출할 때마다 App 이 usageTick 을 올린다. 그때 목록을 다시 읽어
+  // "오늘 사용"을 갱신한다 — 다시 읽지 않으면 호출해도 0 그대로라 키가 안 쓰이는 것처럼 보인다.
+  useEffect(() => {
+    if (usageTick && status && status.ready) loadKeys();
+  }, [usageTick]);
+
   const handleIssue = async () => {
     setBusy(true);
     setMessage("");
@@ -33,6 +39,9 @@ function KeyPanel({ selectedKey, onSelectKey }) {
       const created = await issueKey(label);
       setIssued(created);
       setLabel("");
+      // 발급하면 바로 실행에 쓰도록 골라 둔다. 원문은 지금이 아니면 다시 볼 수 없어서,
+      // 여기서 안 고르면 새로고침 뒤에는 붙여 넣는 수밖에 없다.
+      onSelectKey(created.apiKey);
       loadKeys();
     } catch (error) {
       setMessage(error.message);
@@ -112,6 +121,35 @@ function KeyPanel({ selectedKey, onSelectKey }) {
 
       {message && <p style={errorStyle}>{message}</p>}
 
+      {/* 키를 고르는 자리. 표 아래가 아니라 위에 둔다 — 실행해 보기가 이 값을 쓰기 때문에
+          여기서 비어 있으면 키 없이 호출되고 사용량도 오르지 않는다. */}
+      {keys.length > 0 && (
+        <div style={useKeyRowStyle}>
+          <label style={useKeyLabelStyle}>
+            실행해 보기에 쓸 키
+            <input
+              type="text"
+              value={selectedKey}
+              onChange={(event) => onSelectKey(event.target.value)}
+              placeholder="발급받은 키를 붙여 넣으면 호출에 함께 보냅니다"
+              style={{ ...inputStyle, marginLeft: "0.5rem", minWidth: "320px" }}
+            />
+          </label>
+          {issued && issued.apiKey !== selectedKey && (
+            <button type="button" style={ghostButtonStyle} onClick={() => onSelectKey(issued.apiKey)}>
+              방금 발급한 키 쓰기
+            </button>
+          )}
+          {selectedKey ? (
+            <span style={keyOnStyle}>이 키로 호출합니다 · 사용량에 반영됩니다</span>
+          ) : (
+            <span style={keyOffStyle}>
+              비어 있어 키 없이 호출됩니다. 키 원문은 발급할 때만 보이니, 모르면 폐기 후 다시 발급하세요.
+            </span>
+          )}
+        </div>
+      )}
+
       {keys.length === 0 ? (
         <p style={mutedStyle}>아직 발급한 키가 없습니다.</p>
       ) : (
@@ -152,23 +190,6 @@ function KeyPanel({ selectedKey, onSelectKey }) {
         </table>
       )}
 
-      <div style={useKeyRowStyle}>
-        <label style={useKeyLabelStyle}>
-          실행해 보기에 쓸 키
-          <input
-            type="text"
-            value={selectedKey}
-            onChange={(event) => onSelectKey(event.target.value)}
-            placeholder="발급받은 키를 붙여 넣으면 호출에 함께 보냅니다"
-            style={{ ...inputStyle, marginLeft: "0.5rem", minWidth: "320px" }}
-          />
-        </label>
-        {issued && (
-          <button type="button" style={ghostButtonStyle} onClick={() => onSelectKey(issued.apiKey)}>
-            방금 발급한 키 쓰기
-          </button>
-        )}
-      </div>
     </div>
   );
 }
@@ -275,3 +296,7 @@ const useKeyRowStyle = {
 };
 
 const useKeyLabelStyle = { fontSize: "0.85rem", color: "#334155", display: "flex", alignItems: "center" };
+
+const keyOnStyle = { fontSize: "0.8rem", color: "#1e40af", fontWeight: 500 };
+
+const keyOffStyle = { fontSize: "0.8rem", color: "#b45309" };
