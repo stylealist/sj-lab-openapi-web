@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { fetchKeyStatus, fetchMyKeys, revokeKey, getPublicBaseUrl } from "../api";
+import { fetchKeyStatus, fetchMyKeys, revokeKey } from "../api";
 
 /**
  * 내 API 키 영역. 계정마다 키 1개가 자동으로 배정되고, 그 값을 그대로 보여 준다
@@ -135,20 +135,15 @@ function KeyPanel({ selectedKey, onSelectKey, usageTick }) {
             <span style={usageMetaStyle}>마지막 사용 {myKey.lastUsedAt || "없음"}</span>
           </div>
 
-          {/* 3) 쓰는 법 — 헤더가 기본. 주소에 넣는 방식은 로그에 남으므로 아래에서 따로 안내한다 */}
-          <div style={howToStyle}>
-            <div style={howToTitleStyle}>쓰는 법</div>
-            <code style={howToCodeStyle}>
-              {'curl -H "X-API-Key: ' + (plain || "내_키") + '" \\\n  "' +
-                getPublicBaseUrl() +
-                '/v1/admin-area/sido"'}
-            </code>
-            <p style={howToNoteStyle}>
-              이 화면의 <strong>실행해 보기</strong>는 이 키를 자동으로 붙여 보냅니다. 따로 넣을 것이 없습니다.
-            </p>
-          </div>
+          {/* 쓰는 법을 여기 또 적지 않는다 — 각 API 아래 "샘플 코드"에 이 키가 들어간
+              curl · JavaScript · Python 이 이미 나온다(중복이라 걷어냈다). */}
+          <p style={mutedStyle}>
+            이 화면의 <strong>실행해 보기</strong>는 이 키를 자동으로 붙여 보냅니다.
+            다른 서버·프로그램에서 부를 때는 위 키를 복사해 쓰세요 — 각 API의 <strong>샘플 코드</strong>에
+            이 키가 들어간 형태로 나옵니다.
+          </p>
 
-          {/* 4) 키 바꾸기 — 눈에 띄지 않게 한 줄로. 유출됐을 때 바꿀 길은 남겨 둔다 */}
+          {/* 키 바꾸기 — 눈에 띄지 않게 한 줄로. 유출됐을 때 바꿀 길은 남겨 둔다 */}
           <button
             type="button"
             style={reissueLinkStyle}
@@ -252,34 +247,6 @@ const usageBarInnerStyle = {
 };
 
 const usageMetaStyle = { fontSize: "0.78rem", color: "#94a3b8", whiteSpace: "nowrap" };
-
-const howToStyle = {
-  background: "#f8fafc",
-  border: "1px solid #e2e8f0",
-  borderRadius: "10px",
-  padding: "0.7rem 0.9rem",
-};
-
-const howToTitleStyle = {
-  fontSize: "0.72rem",
-  fontWeight: 600,
-  letterSpacing: "0.06em",
-  color: "#64748b",
-  textTransform: "uppercase",
-  marginBottom: "0.4rem",
-};
-
-const howToCodeStyle = {
-  display: "block",
-  whiteSpace: "pre-wrap",
-  wordBreak: "break-all",
-  fontFamily: "SFMono-Regular, Consolas, monospace",
-  fontSize: "0.8rem",
-  color: "#0f172a",
-  lineHeight: 1.7,
-};
-
-const howToNoteStyle = { fontSize: "0.8rem", color: "#64748b", margin: "0.5rem 0 0" };
 
 const reissueLinkStyle = {
   border: "none",
