@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { fetchKeyStatus, fetchMyKeys, issueKey, revokeKey } from "../api";
+import { fetchKeyStatus, fetchMyKeys, revokeKey } from "../api";
 
 /**
  * 내 API 키 영역. 키를 발급하면 원문은 **그때 한 번만** 보여 준다(서버에 해시만 남는다).
@@ -9,13 +9,20 @@ function KeyPanel({ selectedKey, onSelectKey, usageTick }) {
   const [status, setStatus] = useState(null);
   const [keys, setKeys] = useState([]);
   const [issued, setIssued] = useState(null);
-  const [label, setLabel] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
 
+  // 서버는 키가 없으면 목록을 줄 때 한 개를 자동으로 배정하고, 그때만 원문(issued)을 함께 준다.
+  // 원문은 저장되지 않으니 이 한 번을 놓치면 다시 볼 수 없다 — 받으면 바로 화면에 띄우고 골라 둔다.
   const loadKeys = () => {
     fetchMyKeys()
-      .then((data) => setKeys(data ? data.items : []))
+      .then((data) => {
+        setKeys(data ? data.items : []);
+        if (data && data.issued) {
+          setIssued(data.issued);
+          onSelectKey(data.issued.apiKey);
+        }
+      })
       .catch((error) => setMessage(error.message));
   };
 
@@ -32,31 +39,20 @@ function KeyPanel({ selectedKey, onSelectKey, usageTick }) {
     if (usageTick && status && status.ready) loadKeys();
   }, [usageTick]);
 
-  const handleIssue = async () => {
-    setBusy(true);
-    setMessage("");
-    try {
-      const created = await issueKey(label);
-      setIssued(created);
-      setLabel("");
-      // 발급하면 바로 실행에 쓰도록 골라 둔다. 원문은 지금이 아니면 다시 볼 수 없어서,
-      // 여기서 안 고르면 새로고침 뒤에는 붙여 넣는 수밖에 없다.
-      onSelectKey(created.apiKey);
-      loadKeys();
-    } catch (error) {
-      setMessage(error.message);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleRevoke = async (keyId, keyPrefix) => {
-    if (!window.confirm(keyPrefix + " 키를 지울까요? 이 키로는 더 이상 부를 수 없습니다.")) return;
+  /**
+   * 키 다시 만들기. 쓰던 키를 폐기하면 목록을 다시 읽을 때 서버가 새 키를 배정하고
+   * 그 응답에 원문이 실려 온다(loadKeys 가 받아 화면에 띄운다).
+   * 원문을 잊었을 때 쓰는 경로다 — 쓰던 키는 즉시 못 쓰게 된다.
+   */
+  const handleReissue = async (keyId, keyPrefix) => {
+    if (!window.confirm(keyPrefix + " 키를 버리고 새 키를 받을까요? 지금 키로는 더 이상 부를 수 없습니다."))
+      return;
     setBusy(true);
     setMessage("");
     try {
       await revokeKey(keyId);
-      if (issued && issued.keyId === keyId) setIssued(null);
+      setIssued(null);
+      onSelectKey("");
       loadKeys();
     } catch (error) {
       setMessage(error.message);
@@ -80,30 +76,10 @@ function KeyPanel({ selectedKey, onSelectKey, usageTick }) {
     <div style={cardStyle}>
       <h2 style={titleStyle}>내 API 키</h2>
       <p style={mutedStyle}>
-        데이터 API는 <strong>키가 있어야 호출됩니다</strong>(키 없이 부르면 401). 호출은 기록되고
-        하루 한도가 적용됩니다. 키는 <strong>계정당 1개</strong>입니다.
+        키는 <strong>계정마다 1개</strong>가 자동으로 배정됩니다. 이 화면의 <strong>실행해 보기는
+        로그인만으로 동작</strong>하고, 호출은 아래 사용량에 기록됩니다.
+        키 원문은 <strong>밖에서 curl·코드로 부를 때</strong> 쓰며, 배정되는 순간에만 한 번 보여 드립니다.
       </p>
-
-      {/* 계정당 1개라, 이미 있으면 발급 영역을 감춘다 — 눌러도 서버가 409 만 돌려준다.
-          새로 받으려면 아래 목록에서 폐기하면 이 영역이 다시 나타난다. */}
-      {keys.length === 0 ? (
-        <div style={issueRowStyle}>
-          <input
-            type="text"
-            value={label}
-            onChange={(event) => setLabel(event.target.value)}
-            placeholder="키 이름 (예: 테스트용)"
-            style={inputStyle}
-          />
-          <button type="button" style={primaryButtonStyle} onClick={handleIssue} disabled={busy}>
-            키 발급
-          </button>
-        </div>
-      ) : (
-        <p style={mutedStyle}>
-          이미 발급한 키가 있습니다. 새로 받으려면 아래에서 폐기한 뒤 다시 발급하세요.
-        </p>
-      )}
 
       {issued && (
         <div style={issuedBoxStyle}>
@@ -123,29 +99,29 @@ function KeyPanel({ selectedKey, onSelectKey, usageTick }) {
 
       {/* 키를 고르는 자리. 표 아래가 아니라 위에 둔다 — 실행해 보기가 이 값을 쓰기 때문에
           여기서 비어 있으면 키 없이 호출되고 사용량도 오르지 않는다. */}
+      {/* 키 원문을 굳이 넣지 않아도 로그인 토큰으로 호출된다. 원문을 아는 사람(방금 배정받았거나
+          복사해 둔 경우)은 여기에 넣어 그 키로 부르는지 확인할 수 있다. */}
       {keys.length > 0 && (
         <div style={useKeyRowStyle}>
           <label style={useKeyLabelStyle}>
-            실행해 보기에 쓸 키
+            키 원문으로 호출(선택)
             <input
               type="text"
               value={selectedKey}
               onChange={(event) => onSelectKey(event.target.value)}
-              placeholder="발급받은 키를 붙여 넣으면 호출에 함께 보냅니다"
+              placeholder="비워 두면 로그인 상태로 호출합니다"
               style={{ ...inputStyle, marginLeft: "0.5rem", minWidth: "320px" }}
             />
           </label>
           {issued && issued.apiKey !== selectedKey && (
             <button type="button" style={ghostButtonStyle} onClick={() => onSelectKey(issued.apiKey)}>
-              방금 발급한 키 쓰기
+              배정된 키 넣기
             </button>
           )}
           {selectedKey ? (
             <span style={keyOnStyle}>이 키로 호출합니다 · 사용량에 반영됩니다</span>
           ) : (
-            <span style={keyOffStyle}>
-              비어 있어 실행해 보기가 401이 납니다. 키 원문은 발급할 때만 보이니, 모르면 폐기 후 다시 발급하세요.
-            </span>
+            <span style={keyOnStyle}>로그인 상태로 호출합니다 · 사용량에 반영됩니다</span>
           )}
         </div>
       )}
@@ -178,10 +154,10 @@ function KeyPanel({ selectedKey, onSelectKey, usageTick }) {
                   <button
                     type="button"
                     style={ghostButtonStyle}
-                    onClick={() => handleRevoke(key.keyId, key.keyPrefix)}
+                    onClick={() => handleReissue(key.keyId, key.keyPrefix)}
                     disabled={busy}
                   >
-                    지우기
+                    키 다시 만들기
                   </button>
                 </td>
               </tr>
@@ -214,8 +190,6 @@ const titleStyle = {
 
 const mutedStyle = { fontSize: "0.85rem", color: "#64748b", lineHeight: 1.6 };
 
-const issueRowStyle = { display: "flex", gap: "0.5rem", margin: "0.8rem 0" };
-
 const inputStyle = {
   border: "1px solid #cbd5e1",
   borderRadius: "6px",
@@ -223,16 +197,6 @@ const inputStyle = {
   fontSize: "0.85rem",
   color: "#0f172a",
   minWidth: "220px",
-};
-
-const primaryButtonStyle = {
-  background: "linear-gradient(135deg, #2563eb 0%, #1e3a8a 100%)",
-  color: "#ffffff",
-  border: "none",
-  borderRadius: "8px",
-  padding: "0.45rem 1rem",
-  fontSize: "0.86rem",
-  cursor: "pointer",
 };
 
 const ghostButtonStyle = {

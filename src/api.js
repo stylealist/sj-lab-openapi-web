@@ -65,12 +65,17 @@ export async function fetchCatalog() {
 /**
  * "실행해 보기" 호출. 응답 본문과 함께 걸린 시간·크기를 돌려준다.
  * 오류 응답(400·404 등)도 화면에 그대로 보여 줘야 하므로 throw 하지 않는다.
- * apiKey 를 주면 헤더로 붙여 보낸다(사용량이 기록되고 하루 한도가 적용된다).
+ *
+ * 호출자 확인은 둘 중 하나로 된다.
+ *  - apiKey 를 주면 X-API-Key 헤더로 보낸다(밖에서 부르는 것과 같은 경로).
+ *  - 없으면 로그인 토큰을 보낸다. 키 원문은 저장되지 않아 화면이 모를 수 있으므로,
+ *    이 경우에도 서버가 그 계정의 키로 간주해 사용량을 기록한다.
+ * 어느 쪽이든 사용량에 반영된다.
  */
 export async function callApi(relativePath, apiKey) {
   const startedAt = performance.now();
   try {
-    const headers = apiKey ? { "X-API-Key": apiKey } : undefined;
+    const headers = apiKey ? { "X-API-Key": apiKey } : authHeaders();
     const response = await fetch(getApiBaseUrl() + OPEN_API_PREFIX + relativePath, { headers });
     const text = await response.text();
     return {
