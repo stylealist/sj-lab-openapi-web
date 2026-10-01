@@ -72,10 +72,17 @@ export async function fetchCatalog() {
  *    이 경우에도 서버가 그 계정의 키로 간주해 사용량을 기록한다.
  * 어느 쪽이든 사용량에 반영된다.
  */
-export async function callApi(relativePath, apiKey) {
+export async function callApi(relativePath, apiKey, useLoginFallback = true) {
   const startedAt = performance.now();
   try {
-    const headers = apiKey ? { "X-API-Key": apiKey } : authHeaders();
+    // useLoginFallback=false 는 "밖에서 부르는 것과 똑같이" 보내라는 뜻이다.
+    // 실행해 보기가 이 값을 쓴다 — 키를 비우면 로그인 토큰으로 몰래 통과하지 않고
+    // 서버가 돌려주는 401(어떤 값이 없는지)을 그대로 보여 주기 위해서다.
+    const headers = apiKey
+      ? { "X-API-Key": apiKey }
+      : useLoginFallback
+        ? authHeaders()
+        : undefined;
     const response = await fetch(getApiBaseUrl() + OPEN_API_PREFIX + relativePath, { headers });
     const text = await response.text();
     return {

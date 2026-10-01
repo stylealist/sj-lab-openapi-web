@@ -1,43 +1,54 @@
 import React, { useState } from "react";
 
-// 지금 보고 있는 주소를 그대로 붙여 넣어 쓸 수 있는 코드로 만들어 준다.
-// 키를 고른 상태면 헤더(X-API-Key)까지 넣어 준다 — 키는 주소보다 헤더로 보내는 편이 안전하다.
-function buildSamples(url, apiKey) {
-  const curlHeader = apiKey ? ' \\\n  -H "X-API-Key: ' + apiKey + '"' : "";
-  const jsHeader = apiKey ? ', {\n  headers: { "X-API-Key": "' + apiKey + '" }\n}' : "";
-  const pyHeader = apiKey ? ', headers={"X-API-Key": "' + apiKey + '"}' : "";
+/**
+ * 지금 입력한 값으로 바로 돌려볼 수 있는 코드를 만든다.
+ *
+ * 긴 주소 한 줄이 아니라 **파라미터를 따로 모은 형태**로 적는다 — 값을 바꿀 때 주소 안에서
+ * 찾아 고치지 않아도 되고, `apiKey` 가 다른 값들과 나란히 보여서 "이게 필요하다"는 게 드러난다.
+ * 쉼표가 들어가는 `bbox` 같은 값도 각 언어가 알아서 인코딩해 준다.
+ *
+ * @param baseUrl 쿼리 없는 주소(경로 값은 채워진 상태)
+ * @param params  [이름, 값] 쌍의 배열. 값이 빈 것은 호출하는 쪽에서 걸러 넘긴다
+ */
+function buildSamples(baseUrl, params) {
+  const quote = (value) => '"' + String(value).replace(/"/g, '\\"') + '"';
+
+  const curlData = params.map((p) => '  --data-urlencode ' + quote(p[0] + "=" + p[1])).join(" \\\n");
+  const curl = params.length
+    ? 'curl -G ' + quote(baseUrl) + " \\\n" + curlData
+    : "curl " + quote(baseUrl);
+
+  const jsEntries = params.map((p) => "  " + p[0] + ": " + quote(p[1]) + ",").join("\n");
+  const js = params.length
+    ? "const params = new URLSearchParams({\n" +
+      jsEntries +
+      "\n});\n\nconst response = await fetch(" +
+      quote(baseUrl + "?") +
+      " + params);\nconst data = await response.json();\nconsole.log(data);"
+    : "const response = await fetch(" +
+      quote(baseUrl) +
+      ");\nconst data = await response.json();\nconsole.log(data);";
+
+  const pyEntries = params.map((p) => "    " + quote(p[0]) + ": " + quote(p[1]) + ",").join("\n");
+  const py = params.length
+    ? "import requests\n\nparams = {\n" +
+      pyEntries +
+      "\n}\n\nresponse = requests.get(" +
+      quote(baseUrl) +
+      ", params=params)\nresponse.raise_for_status()\nprint(response.json())"
+    : "import requests\n\nresponse = requests.get(" +
+      quote(baseUrl) +
+      ")\nresponse.raise_for_status()\nprint(response.json())";
 
   return [
-    {
-      id: "curl",
-      label: "curl",
-      code: 'curl "' + url + '"' + curlHeader,
-    },
-    {
-      id: "javascript",
-      label: "JavaScript",
-      code:
-        'const response = await fetch("' +
-        url +
-        '"' +
-        jsHeader +
-        ");\nconst data = await response.json();\nconsole.log(data);",
-    },
-    {
-      id: "python",
-      label: "Python",
-      code:
-        'import requests\n\nresponse = requests.get("' +
-        url +
-        '"' +
-        pyHeader +
-        ")\nresponse.raise_for_status()\nprint(response.json())",
-    },
+    { id: "curl", label: "curl", code: curl },
+    { id: "javascript", label: "JavaScript", code: js },
+    { id: "python", label: "Python", code: py },
   ];
 }
 
-function CodeSamples({ url, apiKey }) {
-  const samples = buildSamples(url, apiKey);
+function CodeSamples({ baseUrl, params }) {
+  const samples = buildSamples(baseUrl, params || []);
   const [activeId, setActiveId] = useState(samples[0].id);
   const [copied, setCopied] = useState(false);
 

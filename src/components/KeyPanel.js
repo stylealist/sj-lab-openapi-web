@@ -119,6 +119,15 @@ function KeyPanel({ selectedKey, onSelectKey, usageTick }) {
             )}
           </div>
 
+          {/* 원문을 모르는 경우(키 값을 저장하기 전에 만들어진 키). 이때는 주소·샘플 코드에도
+              키가 들어가지 않으므로, 어떻게 하면 값이 보이는지 알려 준다. */}
+          {!plain && (
+            <p style={noPlainNoteStyle}>
+              이 키는 <strong>값을 저장하기 전에 만들어졌습니다</strong> — 그래서 앞자리만 보입니다.
+              아래 <strong>새 키로 바꾸기</strong>를 누르면 값이 보이는 키로 교체됩니다(지금 키는 더 이상 쓸 수 없게 됩니다).
+            </p>
+          )}
+
           {/* 2) 오늘 사용량 — 숫자와 막대를 함께 */}
           <div style={usageRowStyle}>
             <span style={usageTextStyle}>
@@ -247,6 +256,17 @@ const usageBarInnerStyle = {
 };
 
 const usageMetaStyle = { fontSize: "0.78rem", color: "#94a3b8", whiteSpace: "nowrap" };
+
+const noPlainNoteStyle = {
+  fontSize: "0.82rem",
+  color: "#b45309",
+  background: "#fffbeb",
+  border: "1px solid #fde68a",
+  borderRadius: "8px",
+  padding: "0.55rem 0.7rem",
+  margin: "0 0 0.6rem",
+  lineHeight: 1.6,
+};
 
 const reissueLinkStyle = {
   border: "none",
